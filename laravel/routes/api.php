@@ -25,4 +25,4 @@ Route::controller(ProductController::class)->prefix('products')->group(function 
     Route::delete('/{productId}', 'deleteProduct');
 });
 
-Route::get('/categories/{categoryId}/products', [ProductController::class, 'getProductsByCategory']);
+

@@ -2,18 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
     public function getCategories()
     {
-        return response()->json(['message' => 'Getting list of categories']);
+        return Category::all();
     }
 
-    public function createCategory()
+    public function createCategory(Request $request) 
     {
-        return response()->json(['message' => 'Creating 1 new category'], 201);
+        $category = Category::create([
+            'name' => $request->name,
+        ]);
+        $category->save();
+        return $category;
     }
 
     public function getCategory($categoryId)
@@ -23,11 +28,30 @@ class CategoryController extends Controller
 
     public function updateCategory(Request $request, $categoryId)
     {
-        return response()->json(['message' => "Updating 1 category based on given categoryId: $categoryId"]);
+        $category = Category::find($categoryId);
+        $category->name = $request->name;
+        $category->save();
+        return $category;
+    }
+    public function deleteCategory(Request $request, $categoryId)
+    {
+        $category = Category::find($categoryId);
+        $category->delete();
+        return $category;
+    }
+    public function index()
+    {
+        return Category::all();
     }
 
-    public function deleteCategory($categoryId)
+    public function store(Request $request)
     {
-        return response()->json(['message' => "Deleting 1 category based on given categoryId: $categoryId"], 200);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $category = Category::create($validated);
+
+        return response()->json($category, 201);
     }
 }

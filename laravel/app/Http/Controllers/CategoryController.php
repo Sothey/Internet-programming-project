@@ -2,56 +2,80 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Models\Category;
+use Illuminate\Support\Facades\Validator; // Import the Validator class
 
 class CategoryController extends Controller
 {
+    // Get /api/categories
     public function getCategories()
     {
-        return Category::all();
+        return response()->json(Category::all());
     }
 
-    public function createCategory(Request $request) 
+    // Post /api/categories
+    public function createCategory(Request $request)
     {
-        $category = Category::create([
-            'name' => $request->name,
+        // **VALIDATION:** Add this block to validate the request data
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255|unique:categories,name',
         ]);
-        $category->save();
-        return $category;
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422); // Return 422 on validation failure
+        }
+
+        $category = Category::create($request->all());
+        return response()->json(["message" => "Category created successfully", "category" => $category], 201);
     }
 
+    // Get /api/categories/{categoryId}
     public function getCategory($categoryId)
     {
-        return response()->json(['message' => "Getting 1 category based on given categoryId: $categoryId"]);
+        $category = Category::find($categoryId);
+
+        if (!$category) {
+            return response()->json(["message" => "Category not found"], 404);
+        }
+
+        return response()->json($category);
     }
 
+    // Patch /api/categories/{categoryId}
     public function updateCategory(Request $request, $categoryId)
     {
         $category = Category::find($categoryId);
-        $category->name = $request->name;
-        $category->save();
-        return $category;
-    }
-    public function deleteCategory(Request $request, $categoryId)
-    {
-        $category = Category::find($categoryId);
-        $category->delete();
-        return $category;
-    }
-    public function index()
-    {
-        return Category::all();
-    }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
+        if (!$category) {
+            return response()->json(["message" => "Category not found"], 404);
+        }
+
+         // **VALIDATION:** Add validation for the update as well
+        $validator = Validator::make($request->all(), [
+            'name' => 'string|max:255|unique:categories,name,' . $categoryId, // Exclude the current category ID
         ]);
 
-        $category = Category::create($validated);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
-        return response()->json($category, 201);
+        $category->update($request->all());
+
+        return response()->json(["message" => "Category updated successfully", "category" => $category]);
+    }
+
+    // Delete /api/categories/{categoryId}
+    public function deleteCategory($categoryId)
+    {
+        $category = Category::find($categoryId);
+
+        if (!$category) {
+            return response()->json(["message" => "Category not found"], 404);
+        }
+
+        $category->delete();
+
+        return response()->json(["message" => "Category deleted successfully"]);
     }
 }
